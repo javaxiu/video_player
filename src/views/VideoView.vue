@@ -4,14 +4,19 @@
       <nav>
         <div v-for="m in ['img', 'video', 'any']" :class="[mode === m ? 'active' : '']" @click="() => mode = m">{{ m }}</div>
       </nav>
-      <div v-if="selectPath" class="up" @click="() => selectPath = selectPath?.split('/').slice(0, -1).join('/')">
-        ◀ {{ selectPath }} {{ filteredFileList.length }}
+      <div class="up" @click="() => selectPath = selectPath?.split('/').slice(0, -1).join('/')">
+        ◀ {{ filteredFileList.length }} / {{ fileList.length }} # {{ selectPath || '' }}
       </div>
     </header>
+    <div v-if="filteredFileList.length === 0">Empty</div>
     <div v-for="(fileItem, index) in filteredFileList" :key="index" class="file">
-      <video v-if="fileItem.type === 'video'" controls :src="fileItem.path" class="video"></video>
-      <img v-else-if="fileItem.type === 'img'" :src="fileItem.path" class="img" />
-      <div v-else-if="fileItem.type === 'folder'" class="folder" @click="() => selectPath = fileItem.path">
+      <div class="play-btn" v-if="fileItem.type === 'video'" @click="() => playingUrl = fileItem.path">
+        🎦
+        {{ fileItem.name }}
+      </div>
+      <video v-if="fileItem.type === 'video'" controls :src="playingUrl === fileItem.path ? fileItem.path : ''" class="video"></video>
+      <img v-if="fileItem.type === 'img'" :src="fileItem.path" class="img" />
+      <div v-if="fileItem.type === 'folder'" class="folder" @click="() => selectPath = fileItem.path">
         📂 {{ fileItem.timeStr }} {{ fileItem.name }}
       </div>
     </div>
@@ -29,6 +34,8 @@ interface File {
   timeStr: string
 }
 
+let playingUrl = ref('');
+
 let mode = ref<string>('any');
 const fileList = ref<File[]>([]);
 const filteredFileList = computed(() => {
@@ -36,9 +43,9 @@ const filteredFileList = computed(() => {
     return fileList.value;
   }
   return fileList.value.filter(f => {
-    return f.type === mode.value;
+    return f.type === mode.value || f.type === 'folder';
   });
-})
+});
 
 let selectPath = ref<string>();
 
@@ -53,6 +60,7 @@ const fetchVideoList = () => {
 watch(selectPath, fetchVideoList);
 
 onMounted(() => {
+  console.log('mounting')
   fetchVideoList();
 });
 
@@ -84,6 +92,9 @@ nav>div.active {
 }
 .file-list-container .up {
   padding: 12px 9px;
+}
+.file .play-btn {
+  padding: 16px 0px 8px 4px;
 }
 .file .video, .file .img{
   width: 100vw;
