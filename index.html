@@ -1,52 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Document</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
-  <meta charset="UTF-8">
-  <title>Video Player</title>
-  <style>
-    *{ padding: 0; margin: 0; }
-    video {
-      width: 100vw;
-    }
-    .video-container {
-      min-height: 200px;
-    }
-  </style>
-</head>
-<body>
-  <div id="app"></div>
-  <script>
-    // 创建Intersection Observer实例
-    const observer = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const videoSrc = entry.target.dataset.uri;
-            const videoElement = document.createElement('video');
-            videoElement.controls = true;
-            videoElement.src = videoSrc;
-            entry.target.appendChild(videoElement);
-            observer.unobserve(entry.target);
-          }
-        });
-      }, {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.1
+<html lang="">
+  <head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8">
+    <title>Video Player</title>
+    <style>
+      *{ padding: 0; margin: 0; }
+      video {
+        width: 100vw;
       }
-    );
-    fetch('/list').then(r => r.json()).then(list => {
-      console.log(list);
-      list.forEach((uri) => {
-        const container = document.createElement('div');
-        container.classList.add('video-container')
-        container.dataset.uri = uri;
-        document.getElementById('app').appendChild(container);
-        observer.observe(container);
-      });
-    })
-  </script>
-</body>
+      .video-container {
+        min-height: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>

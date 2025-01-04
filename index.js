@@ -1,33 +1,50 @@
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
+import express from 'express';
+import cors from 'cors';
+import glob from 'fast-glob';
+import path from 'path';
+import dayjs from 'dayjs';
 
 const app = express();
 const port = 3000;
+app.use(cors());
 
-// 用于递归扫描指定目录下的所有.mp4文件，返回文件路径数组
-function scanMp4Files(dir) {
-    const files = [];
-    const items = fs.readdirSync(dir);
-    items.forEach(item => {
-        const filePath = path.join(dir, item);
-        const stats = fs.statSync(filePath);
-        if (stats.isDirectory()) {
-            files.push(...scanMp4Files(filePath));
-        } else if (path.extname(filePath) === '.mp4') {
-            files.push(filePath);
-        }
-    });
-    return files;
-}
+// app.use(express.static(path.join(__dirname)));
 
-app.use(express.static(path.join(__dirname)));
+const videoSuffix = ['.mp4', '.avi', '.mpg'];
+const imgSuffix = ['.jpg', '.gif', '.jpeg', '.png'];
 
+// const __dirname = process.cwd();
 
 // 根路由，返回展示文件列表的HTML页面
 app.get('/list', (req, res) => {
-    const mp4Files = scanMp4Files('.'); // 当前目录
-    res.json(mp4Files);
+    const sub = req.query.sub || './b';
+    let list = glob.sync([sub + '/*', '!**.torrent'], { objectMode: true, onlyFiles: false, stats: true });
+    list = list
+        .map(item => {
+            const suffix = path.extname(item.path);
+            return {
+                name: item.name,
+                path: item.path,
+                stats: item.stats,
+                suffix,
+                stats: item.stats,
+                time: item.stats.mtime,
+                timeStr: dayjs(item.stats.mtime).format('MM-DD HH:mm'),
+                type: !suffix ? 'folder' : (videoSuffix.includes(suffix.toLowerCase()) ? 'video' : (
+                    imgSuffix.includes(suffix.toLowerCase()) ? 'img' : 'unknown'
+                )),
+            };
+        })
+        .sort((a, b) => {
+            if (a.type === 'folder' && b.type !== 'folder') {
+                return -1;
+            }
+            if (a.type!== 'folder' && b.type === 'folder') {
+                return 1;
+            }
+            return b.time - a.time;
+        });
+    res.json(list);
 });
 
 
