@@ -6,6 +6,8 @@
       <div class="mask">
         <div class="buttons">
           <div @click="reloadPreview()" class="btn">🔎</div>
+          <div @click="reloadPreview(0, -10)" class="btn">⏪</div>
+          <div @click="reloadPreview(0, 10)" class="btn">⏩</div>
           <div @click="toggleMedia" class="btn">🎦</div>
         </div>
       </div>
@@ -21,14 +23,17 @@ const props = defineProps<{
   url: string;
 }>();
 
-const previewUrl = ref('http://localhost:3000/thumbnail?v=' + props.url);
+const api = `http://${window.location.hostname}:3000/thumbnail?v=`;
+
+const previewUrl = ref(api + encodeURIComponent(props.url));
 
 const isImg = ref(true);
 const toggleMedia = () => {
   isImg.value = !isImg.value;
 };
 let retryCount = 0;
-const reloadPreview = (wait = 0) => {
+let forward = 0;
+const reloadPreview = (wait = 0, forwardStep = 1) => {
   if (wait > 0) {
     if (retryCount > 2) {
       return;
@@ -36,7 +41,8 @@ const reloadPreview = (wait = 0) => {
     retryCount++;
     setTimeout(reloadPreview, wait);
   } else {
-    previewUrl.value = 'http://localhost:3000/thumbnail?v=' + props.url + '&t=' + Date.now();
+    forward += forwardStep;
+    previewUrl.value = api + encodeURIComponent(props.url) + '&t=' + Date.now() + '&f=' + forward;
   }
 }
 
@@ -70,7 +76,7 @@ const reloadPreview = (wait = 0) => {
       gap: 10px;
 
       .btn {
-        font-size: 40px;
+        font-size: 20px;
       }
     }
   }

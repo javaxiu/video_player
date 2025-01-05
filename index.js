@@ -55,28 +55,47 @@ app.get("/list", (req, res) => {
   res.json(list);
 });
 
-let queue = Promise.resolve();
+const AsyncPool = class {
+  constructor(size) {
+    this.tasks = [];
+    this.size = size;
+    this.running = 0;
+  }
+  add(task) {
+    this.tasks.push(task);
+    this.processNextTask();
+  }
+  processNextTask() {
+    if (this.tasks.length === 0 || this.running >= this.size) return;
+    const task = this.tasks.shift();
+    this.running++;
+    task().finally(() => {
+      this.running--;
+      this.processNextTask();
+    });
+  }
+}
+const queue = new AsyncPool(4);
+const mb = 1024 * 1024;
 
 app.get("/thumbnail", (req, res) => {
-  const videoPath = req.query.v;
-  console.log("####", videoPath);
+  const split = 100;
+  const { v: videoPath, f: forward = Math.random() * split} = req.query;
   res.set("Content-Type", "image/jpeg");
-  queue = queue.then(() => {
-    return new Promise((resolve, reject) => {
+  queue.add(() => {
+    return new Promise((resolve) => {
+      let cmd;
       ffmpeg(videoPath).ffprobe(function(err, data) {
-        const totalSeconds = data.format.duration;
-        const seekTime = Math.ceil((Math.min(totalSeconds, 60)) * Math.random());
-        console.log(`seek: ${totalSeconds}, ${seekTime}`);
-        ffmpeg(videoPath)
-          .seek(seekTime)
+        const { duration: totalSeconds } = data.format;
+        const seekTime = Number((totalSeconds * Math.min(1, forward / split) - 1).toFixed(4));
+        // console.log(seekTime, totalSeconds - 10);
+        cmd = ffmpeg(videoPath)
           .format('image2pipe')
-          .outputOptions(['-f image2pipe', '-vframes 1'])
-          .on('error', (e) => {
-            resolve();
-            console.log('error', e);
-          })
+          .frames(1)
+          .seekInput(seekTime)
+          .on('error', () => resolve())
           .on('end', () => resolve())
-          .pipe(res, { end: true })
+          .pipe(res, { end: true });
       });
     })
   });
