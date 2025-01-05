@@ -11,12 +11,7 @@
     </header>
     <div v-if="filteredFileList.length === 0">Empty</div>
     <div v-for="(fileItem, index) in filteredFileList" :key="index" class="file">
-      <div class="play-btn" v-if="fileItem.type === 'video'" @click="() => playingUrl = fileItem.path">
-        🎦
-        {{ fileItem.name }}
-      </div>
-      <video v-if="fileItem.type === 'video'" controls :src="playingUrl === fileItem.path ? fileItem.path : ''"
-        class="video"></video>
+      <VideoViewer v-if="fileItem.type === 'video'" :url="fileItem.path"></VideoViewer>
       <img v-if="fileItem.type === 'img'" :src="fileItem.path" class="img" />
       <div v-if="fileItem.type === 'folder'" class="folder" @click="goDown(fileItem.path)">
         📂 {{ fileItem.timeStr }} {{ fileItem.name }}
@@ -27,6 +22,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
+import VideoViewer from '@/components/VideoViewer.vue';
 
 interface File {
   name: string
@@ -36,9 +32,7 @@ interface File {
   timeStr: string
 }
 
-let playingUrl = ref('');
-
-let mode = ref<string>('any');
+const mode = ref<string>('any');
 const fileList = ref<File[]>([]);
 const filteredFileList = computed(() => {
   if (mode.value === 'any') {
@@ -49,12 +43,11 @@ const filteredFileList = computed(() => {
   });
 });
 
-let selectPath = ref<string>();
+const selectPath = ref<string>(history.state.sub || '');
 
 
 const fetchVideoList = () => {
   fetch(`http://${window.location.hostname}:3000/list?sub=${selectPath.value || ''}`).then(r => r.json()).then((list: any[]) => {
-    console.log(list)
     fileList.value = list;
   })
 };
@@ -62,7 +55,6 @@ const fetchVideoList = () => {
 watch(selectPath, fetchVideoList);
 
 onMounted(() => {
-  console.log('mounting')
   fetchVideoList();
 });
 
@@ -77,7 +69,7 @@ const openUp = () => {
 }
 
 window.addEventListener('popstate', function (event) {
-  if (event.state) {
+  if (event.state?.sub) {
     selectPath.value = event.state.sub;
   }
 });
@@ -88,6 +80,7 @@ window.addEventListener('popstate', function (event) {
 header {
   position: sticky;
   top: 0;
+  z-index: 99;
   background-color: #fff;
 }
 
