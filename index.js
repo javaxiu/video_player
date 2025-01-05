@@ -83,12 +83,10 @@ app.get("/thumbnail", (req, res) => {
   res.set("Content-Type", "image/jpeg");
   queue.add(() => {
     return new Promise((resolve) => {
-      let cmd;
       ffmpeg(videoPath).ffprobe(function(err, data) {
         const { duration: totalSeconds } = data.format;
         const seekTime = Number((totalSeconds * Math.min(1, forward / split) - 1).toFixed(4));
-        // console.log(seekTime, totalSeconds - 10);
-        cmd = ffmpeg(videoPath)
+        ffmpeg(videoPath)
           .format('image2pipe')
           .frames(1)
           .seekInput(seekTime)
