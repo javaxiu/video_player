@@ -51,7 +51,6 @@ app.get("/list", (req, res) => {
       }
       return b.time - a.time;
     });
-  console.log(list.length, sub);
   res.json(list);
 });
 

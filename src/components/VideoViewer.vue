@@ -5,9 +5,9 @@
       <img :src="previewUrl" class="img" :alt="url" @error="reloadPreview(1000)">
       <div class="mask">
         <div class="buttons">
+          <div v-if="forward > 0" @click="reloadPreview(0, -10)" class="btn">⏪</div>
+          <div v-if="forward < 100" @click="reloadPreview(0, 10)" class="btn">⏩</div>
           <div @click="reloadPreview()" class="btn">🔎</div>
-          <div @click="reloadPreview(0, -10)" class="btn">⏪</div>
-          <div @click="reloadPreview(0, 10)" class="btn">⏩</div>
           <div @click="toggleMedia" class="btn">🎦</div>
         </div>
       </div>
@@ -32,7 +32,7 @@ const toggleMedia = () => {
   isImg.value = !isImg.value;
 };
 let retryCount = 0;
-let forward = 0;
+let forward = ref(0);
 const reloadPreview = (wait = 0, forwardStep = 1) => {
   if (wait > 0) {
     if (retryCount > 2) {
@@ -41,8 +41,11 @@ const reloadPreview = (wait = 0, forwardStep = 1) => {
     retryCount++;
     setTimeout(reloadPreview, wait);
   } else {
-    forward += forwardStep;
-    previewUrl.value = api + encodeURIComponent(props.url) + '&t=' + Date.now() + '&f=' + forward;
+    forward.value += forwardStep;
+    if (forward.value >= 100 || forward.value <= 0) {
+      return;
+    }
+    previewUrl.value = api + encodeURIComponent(props.url) + '&f=' + forward.value;
   }
 }
 
