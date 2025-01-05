@@ -2,9 +2,10 @@
   <div class="file-list-container">
     <header>
       <nav>
-        <div v-for="m in ['img', 'video', 'any']" :class="[mode === m ? 'active' : '']" @click="() => mode = m">{{ m }}</div>
+        <div v-for="m in ['img', 'video', 'any']" :class="[mode === m ? 'active' : '']" @click="() => mode = m">{{ m }}
+        </div>
       </nav>
-      <div class="up" @click="() => selectPath = selectPath?.split('/').slice(0, -1).join('/')">
+      <div class="up" @click="openUp">
         ◀ {{ filteredFileList.length }} / {{ fileList.length }} # {{ selectPath || '' }}
       </div>
     </header>
@@ -14,9 +15,10 @@
         🎦
         {{ fileItem.name }}
       </div>
-      <video v-if="fileItem.type === 'video'" controls :src="playingUrl === fileItem.path ? fileItem.path : ''" class="video"></video>
+      <video v-if="fileItem.type === 'video'" controls :src="playingUrl === fileItem.path ? fileItem.path : ''"
+        class="video"></video>
       <img v-if="fileItem.type === 'img'" :src="fileItem.path" class="img" />
-      <div v-if="fileItem.type === 'folder'" class="folder" @click="() => selectPath = fileItem.path">
+      <div v-if="fileItem.type === 'folder'" class="folder" @click="goDown(fileItem.path)">
         📂 {{ fileItem.timeStr }} {{ fileItem.name }}
       </div>
     </div>
@@ -64,6 +66,22 @@ onMounted(() => {
   fetchVideoList();
 });
 
+const goDown = (next: string) => {
+  selectPath.value = next;
+  history.pushState({ sub: selectPath.value }, '', '');
+}
+
+const openUp = () => {
+  selectPath.value = selectPath.value?.split('/').slice(0, -1).join('/');
+  history.pushState({ sub: selectPath.value }, '', '');
+}
+
+window.addEventListener('popstate', function (event) {
+  if (event.state) {
+    selectPath.value = event.state.sub;
+  }
+});
+
 </script>
 
 <style scoped>
@@ -72,15 +90,18 @@ header {
   top: 0;
   background-color: #fff;
 }
+
 nav {
   display: flex;
 }
+
 nav>div {
   flex: 1;
   padding: 10px;
   text-align: center;
   background-color: #f3f3f3;
 }
+
 nav>div.active {
   background-color: aliceblue;
 }
@@ -90,15 +111,20 @@ nav>div.active {
   display: flex;
   flex-direction: column;
 }
+
 .file-list-container .up {
   padding: 12px 9px;
 }
+
 .file .play-btn {
   padding: 16px 0px 8px 4px;
 }
-.file .video, .file .img{
+
+.file .video,
+.file .img {
   width: 100vw;
 }
+
 .file .folder {
   display: block;
   overflow: hidden;
