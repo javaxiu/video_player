@@ -10,6 +10,7 @@
       </div>
     </header>
     <div v-if="filteredFileList.length === 0">Empty</div>
+    <div @click="dropFolder">🗑️♻️</div>
     <div v-for="(fileItem, index) in filteredFileList" :key="index" class="file">
       <VideoViewer v-if="fileItem.type === 'video'" :url="fileItem.path"></VideoViewer>
       <img v-if="fileItem.type === 'img'" :src="fileItem.path" class="img" />
@@ -66,6 +67,21 @@ const goDown = (next: string) => {
 const openUp = () => {
   selectPath.value = selectPath.value?.split('/').slice(0, -1).join('/');
   history.pushState({ sub: selectPath.value }, '', '');
+}
+
+const dropFolder = () => {
+  console.log(selectPath.value);
+  fetch(`http://${window.location.hostname}:3000/drop`, {
+    method: 'post',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      path: selectPath.value,
+    })
+  }).then(() => {
+    openUp();
+  })
 }
 
 window.addEventListener('popstate', function (event) {

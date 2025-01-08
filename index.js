@@ -4,19 +4,16 @@ import glob from "fast-glob";
 import path from "path";
 import dayjs from "dayjs";
 import ffmpeg from "fluent-ffmpeg";
+import * as rimraf from 'rimraf';
 
 const app = express();
 const port = 3000;
 app.use(cors());
-
-// app.use(express.static(path.join(__dirname)));
+app.use(express.json());
 
 const videoSuffix = [".mp4", ".avi", ".mpg"];
 const imgSuffix = [".jpg", ".gif", ".jpeg", ".png"];
 
-// const __dirname = process.cwd();
-
-// 根路由，返回展示文件列表的HTML页面
 app.get("/list", (req, res) => {
   const sub = req.query.sub || "./b";
   let list = glob.sync([sub + "/*", "!**.torrent"], {
@@ -75,7 +72,6 @@ const AsyncPool = class {
   }
 }
 const queue = new AsyncPool(4);
-const mb = 1024 * 1024;
 
 app.get("/thumbnail", (req, res) => {
   const split = 100;
@@ -96,6 +92,19 @@ app.get("/thumbnail", (req, res) => {
       });
     })
   });
+});
+
+app.post('/drop', (req, res) => {
+  console.log(req.body.path);
+  // res.json('1');
+  // return;
+  if (req.body.path) {
+    rimraf.rimraf(req.body.path).catch((e) => {
+      console.log(e)
+    }).finally(() => {
+      res.json('success');
+    });
+  }
 });
 
 export const start = () => {
