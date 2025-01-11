@@ -96,6 +96,7 @@ app.get("/thumbnail", (req, res) => {
 
 app.post('/drop', (req, res) => {
   console.log(req.body.path);
+  if (!req.body.path) return;
   // res.json('1');
   // return;
   if (req.body.path) {

@@ -71,17 +71,18 @@ const openUp = () => {
 
 const dropFolder = () => {
   console.log(selectPath.value);
-  fetch(`http://${window.location.hostname}:3000/drop`, {
-    method: 'post',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      path: selectPath.value,
-    })
-  }).then(() => {
-    openUp();
-  })
+  openUp();
+  setTimeout(() => {    
+    fetch(`http://${window.location.hostname}:3000/drop`, {
+      method: 'post',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        path: selectPath.value,
+      })
+    });
+  }, 300);
 }
 
 window.addEventListener('popstate', function (event) {
