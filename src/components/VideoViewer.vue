@@ -5,8 +5,8 @@
       <div class="mask">
         <div class="file-title">{{ props.url.split('/').pop() }}</div>
         <div class="buttons">
-          <div v-if="forward > 0" @click="reloadPreview(0, -10)" class="btn">⏪</div>
-          <div v-if="forward < 100" @click="reloadPreview(0, 10)" class="btn">⏩</div>
+          <div :class="forward > 0 ? '' : 'disabled'" @click="reloadPreview(0, -10)" class="btn">⏪</div>
+          <div :class="forward < 100 ? '' : 'disabled'" @click="reloadPreview(0, 10)" class="btn">⏩</div>
           <div @click="reloadPreview()" class="btn">🔎</div>
           <div @click="toggleMedia" class="btn">🎦</div>
         </div>
@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineEmits } from 'vue';
+import { ref } from 'vue';
 const props = defineProps<{
   url: string;
 }>();
@@ -111,6 +111,11 @@ const dropMedia = () => {
         font-size: 20px;
         display: inline-block;
         margin-left: 10px;
+      }
+      .disabled {
+        color: #ccc;
+        opacity: .5;
+        cursor: not-allowed;
       }
     }
   }

@@ -48,7 +48,9 @@ const selectPath = ref<string>(history.state.sub || '');
 
 
 const fetchVideoList = () => {
-  fetch(`http://${window.location.hostname}:3000/list?sub=${selectPath.value || ''}`).then(r => r.json()).then((list: any[]) => {
+  const apiUrl = new URL(`http://${window.location.hostname}:3000/list`);
+  apiUrl.searchParams.set('sub', selectPath.value || '');
+  fetch(apiUrl.toString()).then(r => r.json()).then((list: any[]) => {
     fileList.value = list;
   })
 };
