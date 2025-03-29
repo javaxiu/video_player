@@ -12,7 +12,7 @@
     <div v-if="filteredFileList.length === 0">Empty</div>
     <div @click="dropFolder">🗑️♻️</div>
     <div v-for="(fileItem, index) in filteredFileList" :key="index" class="file">
-      <VideoViewer v-if="fileItem.type === 'video'" :url="fileItem.path"></VideoViewer>
+      <VideoViewer v-if="fileItem.type === 'video'" :url="fileItem.path" @drop-done="fetchVideoList"></VideoViewer>
       <img v-if="fileItem.type === 'img'" :src="fileItem.path" class="img" />
       <div v-if="fileItem.type === 'folder'" class="folder" @click="goDown(fileItem.path)">
         📂 {{ fileItem.timeStr }} {{ fileItem.name }}
@@ -70,7 +70,11 @@ const openUp = () => {
 }
 
 const dropFolder = () => {
+  if (!confirm(`删除${selectPath.value}`)) {
+    return;
+  }
   console.log(selectPath.value);
+  const dropPath = selectPath.value;
   openUp();
   setTimeout(() => {    
     fetch(`http://${window.location.hostname}:3000/drop`, {
@@ -79,7 +83,7 @@ const dropFolder = () => {
           'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        path: selectPath.value,
+        path: dropPath,
       })
     });
   }, 300);

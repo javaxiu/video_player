@@ -11,7 +11,7 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
-const videoSuffix = [".mp4", ".avi", ".mpg"];
+const videoSuffix = [".mp4", ".avi", ".mpg",".mkv"];
 const imgSuffix = [".jpg", ".gif", ".jpeg", ".png"];
 
 app.get("/list", (req, res) => {
@@ -98,7 +98,7 @@ app.post('/drop', (req, res) => {
   console.log(req.body.path);
   if (!req.body.path) return;
   // res.json('1');
-  // return;
+  console.log(req.body.path);
   if (req.body.path) {
     rimraf.rimraf(req.body.path).catch((e) => {
       console.log(e)
@@ -115,3 +115,5 @@ export const start = () => {
 }
 
 start();
+
+// require('child_process').spawn('')
