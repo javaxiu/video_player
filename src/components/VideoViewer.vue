@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="video-viewer">
     <!-- 初始化渲染img标签 -->
     <div class="preview" v-if="isImg">
       <div class="mask">
@@ -24,8 +24,6 @@ import { ref } from 'vue';
 const props = defineProps<{
   url: string;
 }>();
-
-const emit = defineEmits(['dropDone']);
 
 const api = `http://${window.location.hostname}:3000/thumbnail?v=`;
 
@@ -59,8 +57,8 @@ const dropMedia = () => {
     return;
   }
   const deleteUrl = props.url;
-  window.history.back();
-  setTimeout(() => {    
+  toggleMedia();
+  setTimeout(() => {
     fetch(`http://${window.location.hostname}:3000/drop`, {
       method: 'post',
       headers: {
@@ -70,7 +68,7 @@ const dropMedia = () => {
         path: deleteUrl,
       })
     }).then(() => {
-      emit('dropDone', deleteUrl);
+      window.history.back();
     });
   }, 300);
 }
@@ -78,6 +76,9 @@ const dropMedia = () => {
 </script>
 
 <style scss>
+.video-viewer {
+  margin-bottom: 8px; 
+}
 /* 可以添加组件的样式 */
 .video,
 .img {

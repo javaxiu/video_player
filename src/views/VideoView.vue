@@ -2,21 +2,24 @@
   <div class="file-list-container">
     <header>
       <nav>
-        <div v-for="m in ['img', 'video', 'any']" :class="[mode === m ? 'active' : '']" @click="() => mode = m">{{ m }}
+        <div v-for="m in ['img', 'video', 'media', 'any']" :class="[mode === m ? 'active' : '']" @click="() => mode = m">{{ m }}
         </div>
       </nav>
+      <div class="btn btn-primary" @click="clearEmpty">删除空文件夹</div>
       <div class="up" @click="openUp">
         ◀ {{ filteredFileList.length }} / {{ fileList.length }} # {{ selectPath || '' }}
       </div>
     </header>
     <div v-if="filteredFileList.length === 0">Empty</div>
-    <div @click="dropFolder">🗑️♻️</div>
+    <div class="btn btn-primary mb-2" @click="dropFolder">🗑️♻️</div>
     <div v-for="(fileItem, index) in filteredFileList" :key="index" class="file">
       <VideoViewer v-if="fileItem.type === 'video'" :url="fileItem.path" @drop-done="fetchVideoList"></VideoViewer>
       <img v-if="fileItem.type === 'img'" :src="fileItem.path" class="img" />
       <div v-if="fileItem.type === 'folder'" class="folder" @click="goDown(fileItem.path)">
-        📂 {{ fileItem.timeStr }} {{ fileItem.name }}
+        📂 {{ fileItem.name }}
+        <div class="text-gray-400 text-sm pl-7">{{ fileItem.timeStr }}</div>
       </div>
+      <div v-if="mode === 'any' && fileItem.type === 'unknown'" class="folder">❓{{ fileItem.name }}</div>
     </div>
   </div>
 </template>
@@ -38,6 +41,11 @@ const fileList = ref<File[]>([]);
 const filteredFileList = computed(() => {
   if (mode.value === 'any') {
     return fileList.value;
+  }
+  if (mode.value === 'media') {
+    return fileList.value.filter(f => {
+      return f.type !== 'unknown';
+    });
   }
   return fileList.value.filter(f => {
     return f.type === mode.value || f.type === 'folder';
@@ -89,6 +97,22 @@ const dropFolder = () => {
       })
     });
   }, 300);
+}
+
+const clearEmpty = () => {
+  if (!confirm(`删除${selectPath.value}下的空文件夹`)) {
+    return;
+  }
+  fetch(`http://${window.location.hostname}:3000/clear`, {
+    method: 'post',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      path: selectPath.value,
+      clearEmpty: true,
+    })
+  });
 }
 
 window.addEventListener('popstate', function (event) {
