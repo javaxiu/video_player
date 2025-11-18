@@ -7,12 +7,16 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import path from 'path';
 // import vueDevTools from 'vite-plugin-vue-devtools'
 
-import './index.js';
+import './api/index.js';
 
 // https://vite.dev/config/
 export default defineConfig({
   server: {
     host: '0.0.0.0',
+    hmr: {
+      overlay: false,
+      autoReload: false
+    }
   },
   plugins: [
     vue(),

@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import VideoView from '../views/VideoView.vue'
+import WarmView from '../views/Warm.vue'
+import WarmCover from '../views/WarmCover.vue'
+import Tyy from '../views/Tyy.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -8,6 +11,21 @@ const router = createRouter({
       path: '/video',
       name: 'video',
       component: VideoView,
+    },
+    {
+      path: '/warm-detail',
+      name: 'warm-detail',
+      component: WarmView,
+    },
+    {
+      path: '/warm',
+      name: 'warm',
+      component: WarmCover,
+    },
+    {
+      path: '/tyy',
+      name: 'warm',
+      component: Tyy,
     },
   ],
 })

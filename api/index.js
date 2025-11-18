@@ -5,6 +5,9 @@ import path from "path";
 import dayjs from "dayjs";
 import ffmpeg from "fluent-ffmpeg";
 import * as rimraf from 'rimraf';
+import https from 'https';
+import * as HttpsProxyAgent from 'https-proxy-agent';
+import { getAlbums, getAlbumsPhotos, getTyyPageList, getImagesT6yy } from "./utils/by-fetch";
 
 const app = express();
 const port = 3000;
@@ -181,6 +184,71 @@ app.post('/clear', (req, res) => {
   });
   res.json({ message: '清理完成' });
 })
+
+app.get("/warm-xchina", async (req, res) => {
+  const data = await puppeteer.getData('https://xchina.biz/amateurs.html', () => {
+    return Array.from(document.querySelectorAll('.item.photo')).map(cover => ({
+      id: cover.querySelector('a').getAttribute('href').match(/id-(\w+)\.html/)?.[1],
+      name: cover.querySelector('div:nth-child(3)').innerText,
+      cover: cover.querySelector('a div img').getAttribute('src')
+    }))
+  });
+  return res.json(data);
+});
+
+app.get("/albums", async (req, res) => {
+  const { url } = req.query;
+  const txt = await getAlbums(url);
+  return res.json(txt);
+});
+
+app.get("/albums/list", async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'URL is required' });
+  const prefix = await getAlbumsPhotos(url);
+  return res.json(prefix);
+});
+
+app.get('/img-proxy', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'URL is required' });
+  if (!url.startsWith('http')) {
+    return res.status(400).json({ error: 'URL must start with http or https' });
+  }
+  // 创建请求并直接pipe到响应
+  const u = new URL(url);
+  https.get({
+    hostname: u.hostname,
+    path: u.pathname,
+    method: 'GET',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      'referer': url
+    },
+    agent: new HttpsProxyAgent.HttpsProxyAgent('http://127.0.0.1:7897'),
+  }, (response) => {
+    // 设置正确的 content-type
+    res.setHeader('Content-Type', response.headers['content-type']);
+    // 将远程响应直接pipe到我们的响应中
+    response.pipe(res);
+  }).on('error', (err) => {
+    res.status(500).json({ error: '获取图片失败', err });
+  });
+});
+
+app.get('/tyy', async (req, res) => {
+  const id = Number(req.query.id);
+  const sizeOfPage = 100;
+  const chunkSize = 20;
+  const chunks = sizeOfPage / chunkSize;
+  const page = Math.floor(id / chunks) + 1;
+  const pages = await getTyyPageList(page);
+  const offset = (id % chunks) * chunkSize;
+  const pageOfThis = pages.slice(offset, offset + chunkSize);
+  console.log(page, ((id % chunks)) * chunkSize, (id % chunks) * chunkSize);
+  const pageDetails = await Promise.all(pageOfThis.map(url => getImagesT6yy(url)));
+  res.json(pageDetails.filter(Boolean));
+});
 
 export const start = () => {
   app.listen(port, () => {
