@@ -238,14 +238,15 @@ app.get('/img-proxy', async (req, res) => {
 
 app.get('/tyy', async (req, res) => {
   const id = Number(req.query.id);
+  const authorid = req.query.authorid || null;
   const sizeOfPage = 100;
   const chunkSize = 20;
   const chunks = sizeOfPage / chunkSize;
   const page = Math.floor(id / chunks) + 1;
-  const pages = await getTyyPageList(page);
+  const pages = await getTyyPageList(page, authorid);
   const offset = (id % chunks) * chunkSize;
   const pageOfThis = pages.slice(offset, offset + chunkSize);
-  console.log(page, ((id % chunks)) * chunkSize, (id % chunks) * chunkSize);
+  console.log(page, ((id % chunks)) * chunkSize, (id % chunks) * chunkSize, authorid);
   const pageDetails = await Promise.all(pageOfThis.map(url => getImagesT6yy(url)));
   res.json(pageDetails.filter(Boolean));
 });

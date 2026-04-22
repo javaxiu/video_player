@@ -13,6 +13,7 @@ export const getAlbums = (url) => {
   if (albumsCache.has(url)) {
     return Promise.resolve(albumsCache.get(url));
   }
+  console.log('fetch  -  ', url);
   const r = fetch(url, { agent })
     .then(res => res.text())
     .then(res => cheerio.load(res))
@@ -59,8 +60,13 @@ export const getAlbumsPhotos = (url) => {
   return r;
 }
 
-export const getTyyPageList = (page = 1) => {
-  return fetch(`https://www.t66y.com/thread0806.php?fid=25&page=${page}`, { agent })
+export const getTyyPageList = (page = 1, authorid = null) => {
+  let url = `https://www.t66y.com/thread0806.php?fid=25&page=${page}`;
+  if (authorid) {
+    url += `&search=${authorid}`;
+  }
+  console.log(url);
+  return fetch(url, { agent })
     .then(res => res.text())
     .then(res => cheerio.load(res))
     .then($ => {
@@ -88,8 +94,12 @@ export const getImagesT6yy = (/** @type {string} */ url) => {
   // 使用fetch获取内容
   return fetch(url, { agent })
     .then(res => res.text())
-    .then(res => cheerio.load(res))
-    .then($ => {
+    .then(html => {
+      const $ = cheerio.load(html);
+      const authoridMatch = html.match(/var authorid = (\d+);/);
+      const authorid = authoridMatch ? authoridMatch[1] : null;
+      const timestampMatch = html.match(/Posted:\s*<span\s+data-timestamp="(\d+)">/);
+      const timestamp = timestampMatch ? Number(timestampMatch[1]) : null;
       const images = [];
       // 获取所有table img元素
       $('table img').each((i, el) => {
@@ -105,7 +115,7 @@ export const getImagesT6yy = (/** @type {string} */ url) => {
         cachePageDetail[url] = false;
         return;
       }
-      cachePageDetail[url] = { title, text, images, url };
+      cachePageDetail[url] = { title, text, images, url, authorid, timestamp };
       return cachePageDetail[url];
     })
     .catch(err => {
