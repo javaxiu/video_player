@@ -9,6 +9,8 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 // 继承所有 img 标签原生属性
 const props = defineProps<{
   src?: string
+  /** 为 true 时服务端拉原图直连，不走 7897 上游代理（如 bus 页） */
+  directUpstream?: boolean
 }>()
 
 const imgRef = ref<HTMLImageElement | null>(null)
@@ -18,7 +20,9 @@ const isVisible = ref(false)
 const proxyUrl = computed(() => {
   if (!props.src) return ''
   // 相对路径则先转为绝对路径
-  return prefix + '/img-proxy?url=' + props.src
+  const q = new URLSearchParams({ url: props.src })
+  if (props.directUpstream) q.set('directUpstream', '1')
+  return `${prefix}/img-proxy?${q.toString()}`
 })
 
 // 使用 IntersectionObserver 检测元素是否可见

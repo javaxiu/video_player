@@ -3,6 +3,7 @@ import VideoView from '../views/VideoView.vue'
 import WarmView from '../views/Warm.vue'
 import WarmCover from '../views/WarmCover.vue'
 import Tyy from '../views/Tyy.vue'
+import Bus from '../views/Bus.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -24,8 +25,13 @@ const router = createRouter({
     },
     {
       path: '/tyy',
-      name: 'warm',
+      name: 'tyy',
       component: Tyy,
+    },
+    {
+      path: '/bus',
+      name: 'bus',
+      component: Bus,
     },
   ],
 })

@@ -5,9 +5,10 @@ import path from "path";
 import dayjs from "dayjs";
 import ffmpeg from "fluent-ffmpeg";
 import * as rimraf from 'rimraf';
+import http from 'http';
 import https from 'https';
-import * as HttpsProxyAgent from 'https-proxy-agent';
-import { getAlbums, getAlbumsPhotos, getTyyPageList, getImagesT6yy } from "./utils/by-fetch";
+import { getAlbums, getAlbumsPhotos, getTyyPageList, getImagesT6yy, getBusForumPageDetails } from "./utils/by-fetch";
+import { getBusImgProxyRequestOptions } from "./utils/bus-cookie-jar.js";
 
 const app = express();
 const port = 3000;
@@ -210,30 +211,42 @@ app.get("/albums/list", async (req, res) => {
 });
 
 app.get('/img-proxy', async (req, res) => {
-  const { url } = req.query;
+  const { url, directUpstream } = req.query;
   if (!url) return res.status(400).json({ error: 'URL is required' });
   if (!url.startsWith('http')) {
     return res.status(400).json({ error: 'URL must start with http or https' });
   }
-  // 创建请求并直接pipe到响应
   const u = new URL(url);
-  https.get({
+  const du = Array.isArray(directUpstream) ? directUpstream[0] : directUpstream;
+  let options;
+  try {
+    options = await getBusImgProxyRequestOptions(url, {
+      directUpstream: du === '1' || du === 'true',
+    });
+  } catch (e) {
+    return res.status(500).json({ error: '准备图片请求失败', err: String(e) });
+  }
+  const lib = u.protocol === 'https:' ? https : http;
+  const reqOpts = {
     hostname: u.hostname,
-    path: u.pathname,
+    path: u.pathname + (u.search || ''),
     method: 'GET',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      'referer': url
-    },
-    agent: new HttpsProxyAgent.HttpsProxyAgent('http://127.0.0.1:7897'),
-  }, (response) => {
-    // 设置正确的 content-type
-    res.setHeader('Content-Type', response.headers['content-type']);
-    // 将远程响应直接pipe到我们的响应中
-    response.pipe(res);
-  }).on('error', (err) => {
-    res.status(500).json({ error: '获取图片失败', err });
-  });
+    headers: options.headers,
+    agent: u.protocol === 'https:' ? options.agent : undefined,
+  };
+  if (u.port) {
+    reqOpts.port = Number(u.port);
+  }
+  lib
+    .get(reqOpts, (incoming) => {
+      res.setHeader('Content-Type', incoming.headers['content-type'] || 'application/octet-stream');
+      incoming.pipe(res);
+    })
+    .on('error', (err) => {
+      if (!res.headersSent) {
+        res.status(500).json({ error: '获取图片失败', err: String(err) });
+      }
+    });
 });
 
 app.get('/tyy', async (req, res) => {
@@ -249,6 +262,17 @@ app.get('/tyy', async (req, res) => {
   console.log(page, ((id % chunks)) * chunkSize, (id % chunks) * chunkSize, authorid);
   const pageDetails = await Promise.all(pageOfThis.map(url => getImagesT6yy(url)));
   res.json(pageDetails.filter(Boolean));
+});
+
+app.get('/bus', async (req, res) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  try {
+    const rows = await getBusForumPageDetails(page);
+    res.json(rows);
+  } catch (e) {
+    console.log('/bus', e);
+    res.status(500).json([]);
+  }
 });
 
 export const start = () => {
